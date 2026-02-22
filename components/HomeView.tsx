@@ -149,28 +149,63 @@ const HomeView: React.FC<HomeViewProps> = ({
                      {Notification.permission === 'default' ? 'Attiva Notifiche' : 'Invia Notifica Test'}
                    </button>
                    {Notification.permission === 'granted' && (
-                     <button 
-                      onClick={async () => {
-                        const registration = await navigator.serviceWorker.ready;
-                        const subscription = await registration.pushManager.getSubscription();
-                        if (subscription) {
-                          await fetch('/api/push/send', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                              subscription,
-                              title: "PituGym Push",
-                              body: "Questa è una vera notifica push dal server! 🚀"
-                            }),
-                            headers: { 'Content-Type': 'application/json' }
-                          });
-                        } else {
-                          alert("Nessuna sottoscrizione push trovata. Prova a ricaricare.");
-                        }
-                      }}
-                      className="w-full py-4 mt-2 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all"
-                     >
-                       Test Real Push (Server)
-                     </button>
+                     <div className="space-y-2 mt-2">
+                       <button 
+                        onClick={async () => {
+                          const registration = await navigator.serviceWorker.ready;
+                          const subscription = await registration.pushManager.getSubscription();
+                          if (subscription) {
+                            await fetch('/api/push/send', {
+                              method: 'POST',
+                              body: JSON.stringify({
+                                subscription,
+                                title: "PituGym Push",
+                                body: "Questa è una vera notifica push dal server! 🚀"
+                              }),
+                              headers: { 'Content-Type': 'application/json' }
+                            });
+                          } else {
+                            alert("Nessuna sottoscrizione push trovata. Assicurati di aver configurato le chiavi VAPID e prova a cliccare 'Registra Sottoscrizione' qui sotto.");
+                          }
+                        }}
+                        className="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all"
+                       >
+                         Test Real Push (Server)
+                       </button>
+                       
+                       <button 
+                        onClick={async () => {
+                          try {
+                            const registration = await navigator.serviceWorker.ready;
+                            const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+                            
+                            if (!publicKey) {
+                              alert("Errore: VITE_VAPID_PUBLIC_KEY non configurata nelle variabili d'ambiente.");
+                              return;
+                            }
+
+                            const subscription = await registration.pushManager.subscribe({
+                              userVisibleOnly: true,
+                              applicationServerKey: publicKey
+                            });
+
+                            await fetch('/api/push/subscribe', {
+                              method: 'POST',
+                              body: JSON.stringify(subscription),
+                              headers: { 'Content-Type': 'application/json' }
+                            });
+                            
+                            alert("Sottoscrizione registrata con successo!");
+                          } catch (err) {
+                            console.error(err);
+                            alert("Errore durante la registrazione: " + (err as Error).message);
+                          }
+                        }}
+                        className="w-full py-2 text-[9px] text-slate-500 uppercase font-black hover:text-slate-300 transition-colors"
+                       >
+                         Registra Sottoscrizione
+                       </button>
+                     </div>
                    )}
                 </div>
 
