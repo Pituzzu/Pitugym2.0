@@ -15,6 +15,9 @@ import GoalsView from './components/GoalsView';
 import { 
   auth, 
   db, 
+  messaging,
+  getToken,
+  onMessage,
   signOut,
   onAuthStateChanged, 
   User, 
@@ -142,6 +145,40 @@ const App: React.FC = () => {
     };
 
     if (user) setupPush();
+  }, [user]);
+
+  useEffect(() => {
+    const setupFCM = async () => {
+      if (messaging && 'Notification' in window && Notification.permission === 'granted') {
+        try {
+          const token = await getToken(messaging, {
+            vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+          });
+          if (token) {
+            console.log("FCM Token:", token);
+            // In a real app, save this token to Firestore for the user
+            await setDoc(doc(db, 'users', user!.uid), { fcmToken: token }, { merge: true });
+          }
+        } catch (err) {
+          console.error("FCM setup failed:", err);
+        }
+      }
+    };
+
+    if (user) setupFCM();
+
+    if (messaging) {
+      const unsubscribe = onMessage(messaging, (payload) => {
+        console.log("Foreground message received:", payload);
+        if (Notification.permission === 'granted') {
+          new Notification(payload.notification?.title || 'PituGym', {
+            body: payload.notification?.body,
+            icon: '🦁'
+          });
+        }
+      });
+      return () => unsubscribe();
+    }
   }, [user]);
 
   useEffect(() => {

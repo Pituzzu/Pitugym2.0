@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { WorkoutPlan, WorkoutLog, BodyMetric, GoalItem, PaymentLog } from '../types';
-import { auth } from '../services/firebase';
+import { auth, messaging, getToken } from '../services/firebase';
 import { 
   DumbbellIcon, 
   ActivityIcon, 
@@ -49,6 +49,7 @@ const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [vapidKeys, setVapidKeys] = useState<{ publicKey: string; privateKey: string } | null>(null);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
   const lastPayment = [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
   const isExpired = lastPayment ? new Date(lastPayment.expiryDate) < new Date() : true;
   const completedGoals = goals.filter(g => g.completed).length;
@@ -205,6 +206,40 @@ const HomeView: React.FC<HomeViewProps> = ({
                        >
                          Registra Sottoscrizione
                        </button>
+                     </div>
+                   )}
+                </div>
+
+                <div className="p-6 bg-slate-950 border border-slate-800 rounded-3xl">
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Firebase Cloud Messaging (FCM)</p>
+                   {!fcmToken ? (
+                     <button 
+                      onClick={async () => {
+                        if (messaging) {
+                          try {
+                            const token = await getToken(messaging, {
+                              vapidKey: import.meta.env.VITE_VAPID_PUBLIC_KEY
+                            });
+                            setFcmToken(token);
+                          } catch (e) {
+                            alert("Errore FCM: " + (e as Error).message);
+                          }
+                        }
+                      }}
+                      className="w-full py-4 bg-slate-800 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all"
+                     >
+                       Mostra Token FCM
+                     </button>
+                   ) : (
+                     <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
+                        <p className="text-[8px] text-slate-500 uppercase font-black mb-1">Token FCM</p>
+                        <code className="text-[9px] text-blue-400 break-all block">{fcmToken}</code>
+                        <button 
+                          onClick={() => setFcmToken(null)}
+                          className="w-full mt-2 text-[8px] text-slate-500 uppercase font-black"
+                        >
+                          Nascondi
+                        </button>
                      </div>
                    )}
                 </div>
