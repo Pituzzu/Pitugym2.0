@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { WorkoutPlan, Exercise, WorkoutLog } from '../types';
-import { TrashIcon, EditIcon, CheckIcon, XIcon, PlusIcon, PlayIcon } from './Icons';
+import { TrashIcon, EditIcon, CheckIcon, XIcon, PlusIcon, PlayIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 import LogWorkoutModal from './LogWorkoutModal';
 
 interface PlanDisplayProps {
@@ -21,10 +21,28 @@ const PlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onDelete, onUpdate, onL
   const [editing, setEditing] = useState<EditState | null>(null);
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [showLogModal, setShowLogModal] = useState(false);
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setActiveDayIdx(0);
   }, [plan.id]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      const activeBtn = scrollRef.current.children[activeDayIdx] as HTMLElement;
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [activeDayIdx]);
+
+  const handlePrevDay = () => {
+    setActiveDayIdx((prev) => (prev > 0 ? prev - 1 : plan.days.length - 1));
+  };
+
+  const handleNextDay = () => {
+    setActiveDayIdx((prev) => (prev < plan.days.length - 1 ? prev + 1 : 0));
+  };
 
   const startEditing = (dayIdx: number, exIdx: number, ex: Exercise) => {
     setEditing({ dayIdx, exIdx, data: { ...ex } });
@@ -132,20 +150,41 @@ const PlanDisplay: React.FC<PlanDisplayProps> = ({ plan, onDelete, onUpdate, onL
       </div>
 
       {/* Selettore Giorni - Responsive */}
-      <div className="flex gap-2 p-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-x-auto no-scrollbar scroll-smooth snap-x">
-        {plan.days.map((day, idx) => (
-          <button
-            key={idx}
-            onClick={() => setActiveDayIdx(idx)}
-            className={`snap-start whitespace-nowrap min-w-[100px] flex-1 px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${
-              activeDayIdx === idx
-                ? 'bg-white dark:bg-slate-800 text-orange-500 shadow-sm border border-slate-100 dark:border-slate-700'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-            }`}
-          >
-            {day.dayName.split(' ')[0]}
-          </button>
-        ))}
+      <div className="flex items-center gap-2">
+        <button 
+          onClick={handlePrevDay}
+          className="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm shrink-0 active:scale-95"
+          aria-label="Giorno precedente"
+        >
+          <ChevronLeftIcon />
+        </button>
+
+        <div 
+          ref={scrollRef}
+          className="flex-1 flex gap-2 p-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-[2rem] overflow-x-auto no-scrollbar scroll-smooth snap-x"
+        >
+          {plan.days.map((day, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveDayIdx(idx)}
+              className={`snap-start whitespace-nowrap min-w-[100px] flex-1 px-6 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeDayIdx === idx
+                  ? 'bg-white dark:bg-slate-800 text-orange-500 shadow-sm border border-slate-100 dark:border-slate-700'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              }`}
+            >
+              {day.dayName.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+
+        <button 
+          onClick={handleNextDay}
+          className="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-orange-500 hover:border-orange-200 transition-all shadow-sm shrink-0 active:scale-95"
+          aria-label="Giorno successivo"
+        >
+          <ChevronRightIcon />
+        </button>
       </div>
 
       {/* Lista Esercizi - Migliorato Responsive Testi */}
